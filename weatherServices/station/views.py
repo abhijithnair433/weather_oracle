@@ -7,15 +7,19 @@ from django.utils import timezone
 
 
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
-from .serializers import SensorReadingSerializer
-from .models import SensorReading
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .serializers import SensorReadingSerializer, WeatherPredictionSerializer
+from .models import SensorReading,  WeatherPrediction
 
 
 
 
 @api_view(["POST", "GET"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def readings(request):
     if request.method == "POST":
         serializer = SensorReadingSerializer(data=request.data)
@@ -30,3 +34,12 @@ def readings(request):
         serializer = SensorReadingSerializer(query_data,many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
         
+
+@api_view(["GET"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def predicted(request):
+    station_id = request.query_params.get("station")
+    query_data = WeatherPrediction.objects.filter(station_id= station_id)
+    serializer = WeatherPredictionSerializer(query_data,many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
